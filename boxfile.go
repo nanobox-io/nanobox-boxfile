@@ -53,8 +53,7 @@ func (self *Boxfile) Merge(box Boxfile) {
 // MergeProc drops a procfile into the existing boxfile
 func (self *Boxfile) MergeProc(box Boxfile) {
   for key, val := range box.parsed {
-    self.parsed[key] = make(map[interface{}]interface{})
-    self.parsed[key]["exec"] = val
+    self.parsed[key] = make(map[interface{}]interface{"exec":val})
   }
 }
 
