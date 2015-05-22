@@ -8,7 +8,7 @@ import (
 
 type Boxfile struct {
   raw []byte
-  parsed map[interface{}]interface{}
+  Parsed map[interface{}]interface{}
   Valid bool
 }
 
@@ -22,7 +22,7 @@ func NewFromPath(path string) Boxfile {
 func New(raw []byte) Boxfile {
   box := Boxfile{
     raw: raw,
-    parsed: make(map[interface{}]interface{}),
+    Parsed: make(map[interface{}]interface{}),
   }
   box.parse()
   return box
@@ -31,41 +31,48 @@ func New(raw []byte) Boxfile {
 // Node returns just a specific node from the boxfile
 // if the object is a sub hash it returns a boxfile object 
 // this allows Node to be chained if you know the data
-func (b Boxfile) Node(name interface{}) interface{} {
-  switch b.parsed[name].(type) {
+func (b *Boxfile) Node(name interface{}) interface{} {
+  switch b.Parsed[name].(type) {
   default:
-      return b.parsed[name]
+      return b.Parsed[name]
   case map[interface{}]interface{}:
-    b := Boxfile{parsed: b.parsed[name].(map[interface{}]interface{})}
+    b := Boxfile{Parsed: b.Parsed[name].(map[interface{}]interface{})}
     b.fillRaw()
     b.Valid = true
     return b
   }
 }
 
+func (b *Boxfile) Nodes() (rtn []interface{}) {
+  for key, _ := range b.Parsed {
+    rtn = append(rtn, key)
+  }
+  return
+}
+
 // Merge puts a new boxfile data ontop of your existing boxfile
 func (self *Boxfile) Merge(box Boxfile) {
-  for key, val := range box.parsed {
-    self.parsed[key] = val
+  for key, val := range box.Parsed {
+    self.Parsed[key] = val
   }
 }
 
 // MergeProc drops a procfile into the existing boxfile
 func (self *Boxfile) MergeProc(box Boxfile) {
-  for key, val := range box.parsed {
-    self.parsed[key] = make(map[interface{}]interface{"exec":val})
+  for key, val := range box.Parsed {
+    self.Parsed[key] = map[interface{}]interface{}{"exec":val}
   }
 }
 
 // fillRaw is used when a boxfile is create from an existing boxfile and we want to 
 // see what the raw would look like
 func (b *Boxfile) fillRaw() {
-  b.raw , _ = goyaml.Marshal(b.parsed)
+  b.raw , _ = goyaml.Marshal(b.Parsed)
 }
 
 // parse takes raw data and converts it to a map structure
 func (b *Boxfile) parse() {
-  err := goyaml.Unmarshal(b.raw, &b.parsed)
+  err := goyaml.Unmarshal(b.raw, &b.Parsed)
   if err != nil {
     b.Valid = false
   } else {

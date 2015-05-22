@@ -1,6 +1,6 @@
 package main
 
-import "github.com/nanobox-core/boxfile"
+import "github.com/pagodabox/nanobox-boxfile"
 import "fmt"
 
 func main() {
