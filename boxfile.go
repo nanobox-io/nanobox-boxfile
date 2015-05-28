@@ -43,6 +43,7 @@ func (b *Boxfile) Node(name interface{}) interface{} {
   }
 }
 
+// list nodes
 func (b *Boxfile) Nodes() (rtn []interface{}) {
   for key, _ := range b.Parsed {
     rtn = append(rtn, key)
