@@ -4,6 +4,7 @@ package boxfile
 import (
   "launchpad.net/goyaml"
   "io/ioutil"
+  "strconv"
 )
 
 type Boxfile struct {
@@ -31,15 +32,63 @@ func New(raw []byte) Boxfile {
 // Node returns just a specific node from the boxfile
 // if the object is a sub hash it returns a boxfile object 
 // this allows Node to be chained if you know the data
-func (b *Boxfile) Node(name interface{}) interface{} {
+func (self *Boxfile) Node(name interface{}) (box Boxfile) {
+  switch self.Parsed[name].(type) {
+  case map[interface{}]interface{}:
+    box.Parsed = self.Parsed[name].(map[interface{}]interface{})
+    box.fillRaw()
+    box.Valid = true
+  default:
+    box.Valid = false
+  }
+  return
+}
+
+func (b *Boxfile) Value(name interface{}) interface{} {
+  return b.Parsed[name]
+}
+
+func (b *Boxfile) StringValue(name interface{}) string {
   switch b.Parsed[name].(type) {
   default:
-      return b.Parsed[name]
-  case map[interface{}]interface{}:
-    b := Boxfile{Parsed: b.Parsed[name].(map[interface{}]interface{})}
-    b.fillRaw()
-    b.Valid = true
-    return b
+    return ""
+  case string:
+    return b.Parsed[name].(string)
+  case bool:
+    return strconv.FormatBool(b.Parsed[name].(bool))
+  case int:
+    return strconv.Itoa(b.Parsed[name].(int))
+  }
+}
+
+func (b *Boxfile) IntValue(name interface{}) int {
+  switch b.Parsed[name].(type) {
+  default:
+    return 0
+  case string:
+    i, _ := strconv.Atoi(b.Parsed[name].(string))
+    return i
+  case bool:
+    if b.Parsed[name].(bool) == true {
+      return 1
+    }
+    return 0
+  case int:
+    return b.Parsed[name].(int)
+  }
+}
+
+func (b *Boxfile) BoolValue(name interface{}) bool {
+  switch b.Parsed[name].(type) {
+  default:
+    return false
+  case string:
+    boo, _ :=strconv.ParseBool(b.Parsed[name].(string))
+    return boo
+  case bool:
+    return b.Parsed[name].(bool)
+  case int:
+    return (b.Parsed[name].(int) != 0)
   }
 }
 
