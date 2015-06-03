@@ -103,7 +103,14 @@ func (b *Boxfile) Nodes() (rtn []interface{}) {
 // Merge puts a new boxfile data ontop of your existing boxfile
 func (self *Boxfile) Merge(box Boxfile) {
   for key, val := range box.Parsed {
-    self.Parsed[key] = val
+    switch self.Parsed[key].(type) {
+    case map[interface{}]interface{}:
+      sub := self.Node(key)
+      sub.Merge(box.Node(key))
+      self.Parsed[key] = sub.Parsed
+    default:
+      self.Parsed[key] = val
+    }
   }
 }
 
