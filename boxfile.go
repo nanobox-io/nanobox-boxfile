@@ -32,7 +32,7 @@ func New(raw []byte) Boxfile {
 // Node returns just a specific node from the boxfile
 // if the object is a sub hash it returns a boxfile object 
 // this allows Node to be chained if you know the data
-func (self *Boxfile) Node(name interface{}) (box Boxfile) {
+func (self Boxfile) Node(name interface{}) (box Boxfile) {
   switch self.Parsed[name].(type) {
   case map[interface{}]interface{}:
     box.Parsed = self.Parsed[name].(map[interface{}]interface{})
@@ -44,11 +44,11 @@ func (self *Boxfile) Node(name interface{}) (box Boxfile) {
   return
 }
 
-func (b *Boxfile) Value(name interface{}) interface{} {
+func (b Boxfile) Value(name interface{}) interface{} {
   return b.Parsed[name]
 }
 
-func (b *Boxfile) StringValue(name interface{}) string {
+func (b Boxfile) StringValue(name interface{}) string {
   switch b.Parsed[name].(type) {
   default:
     return ""
@@ -61,7 +61,7 @@ func (b *Boxfile) StringValue(name interface{}) string {
   }
 }
 
-func (b *Boxfile) IntValue(name interface{}) int {
+func (b Boxfile) IntValue(name interface{}) int {
   switch b.Parsed[name].(type) {
   default:
     return 0
@@ -78,7 +78,7 @@ func (b *Boxfile) IntValue(name interface{}) int {
   }
 }
 
-func (b *Boxfile) BoolValue(name interface{}) bool {
+func (b Boxfile) BoolValue(name interface{}) bool {
   switch b.Parsed[name].(type) {
   default:
     return false
@@ -93,7 +93,7 @@ func (b *Boxfile) BoolValue(name interface{}) bool {
 }
 
 // list nodes
-func (b *Boxfile) Nodes() (rtn []interface{}) {
+func (b Boxfile) Nodes() (rtn []interface{}) {
   for key, _ := range b.Parsed {
     rtn = append(rtn, key)
   }
@@ -101,7 +101,7 @@ func (b *Boxfile) Nodes() (rtn []interface{}) {
 }
 
 // Merge puts a new boxfile data ontop of your existing boxfile
-func (self *Boxfile) Merge(box Boxfile) {
+func (self Boxfile) Merge(box Boxfile) {
   for key, val := range box.Parsed {
     switch self.Parsed[key].(type) {
     case map[interface{}]interface{}:
@@ -115,7 +115,7 @@ func (self *Boxfile) Merge(box Boxfile) {
 }
 
 // MergeProc drops a procfile into the existing boxfile
-func (self *Boxfile) MergeProc(box Boxfile) {
+func (self Boxfile) MergeProc(box Boxfile) {
   for key, val := range box.Parsed {
     self.Parsed[key] = map[interface{}]interface{}{"exec":val}
   }
@@ -123,12 +123,12 @@ func (self *Boxfile) MergeProc(box Boxfile) {
 
 // fillRaw is used when a boxfile is create from an existing boxfile and we want to 
 // see what the raw would look like
-func (b *Boxfile) fillRaw() {
+func (b Boxfile) fillRaw() {
   b.raw , _ = goyaml.Marshal(b.Parsed)
 }
 
 // parse takes raw data and converts it to a map structure
-func (b *Boxfile) parse() {
+func (b Boxfile) parse() {
   err := goyaml.Unmarshal(b.raw, &b.Parsed)
   if err != nil {
     b.Valid = false
