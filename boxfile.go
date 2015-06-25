@@ -93,7 +93,7 @@ func (b Boxfile) BoolValue(name string) bool {
 }
 
 // list nodes
-func (b Boxfile) Nodes() (rtn []interface{}) {
+func (b Boxfile) Nodes() (rtn []string) {
   for key, _ := range b.Parsed {
     rtn = append(rtn, key)
   }
