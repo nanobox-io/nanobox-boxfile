@@ -6,7 +6,7 @@ import "testing"
 
 func Testparse(t *testing.T) {
   box := New([]byte("a: Easy!\nb:\n  c: 2\n  d: [3, 4]\n"))
-  if box.Node("a").(string) != "Easy!" {
+  if box.Node("a") != "Easy!" {
     t.Error("boxfile parsed does not match boxfile in")
   }
 
@@ -20,7 +20,7 @@ func Testparse(t *testing.T) {
 
 func TestNode(t *testing.T) {
   box := New([]byte("web1:\n  name: site\n  type: php\n  version: 5.4\n  php_extensions:\n    - mysql\n    - gd\n    - eaccelerator\n"))
-  web1 := box.Node("web1").(Boxfile)
+  web1 := box.Node("web1")
   if web1.Node("name").(string) != "site" {
     t.Error("nested nodes dont work")
   }
