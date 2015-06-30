@@ -113,7 +113,7 @@ func (b Boxfile) Nodes() (rtn []string) {
 func (self *Boxfile) Merge(box Boxfile) {
   for key, val := range box.Parsed {
     switch self.Parsed[key].(type) {
-    case map[string]interface{}:
+    case map[string]interface{}, map[interface{}]interface{}:
       sub := self.Node(key)
       sub.Merge(box.Node(key))
       self.Parsed[key] = sub.Parsed
