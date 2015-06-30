@@ -38,6 +38,15 @@ func (self Boxfile) Node(name string) (box Boxfile) {
     box.Parsed = self.Parsed[name].(map[string]interface{})
     box.fillRaw()
     box.Valid = true
+  case map[interface{}]interface{}:
+    box.Parsed = make(map[string]interface{})
+    for key, val := range self.Parsed[name].(map[interface{}]interface{}) {
+      switch key.(type) {
+      case string:
+        box.Parsed[key.(string)] = val
+      }
+    }
+    box.Valid = true
   default:
     box.Valid = false
   }

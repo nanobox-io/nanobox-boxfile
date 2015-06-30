@@ -12,5 +12,5 @@ func main() {
   fmt.Println(box2)
   fmt.Println(box2.Node("web1").Node("php_extensions"))
   box2.Merge(box)
-  // fmt.Printf("%+v\n", box2)
+  fmt.Printf("%#v\n", box2)
 }
