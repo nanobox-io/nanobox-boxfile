@@ -144,5 +144,18 @@ func (b *Boxfile) parse() {
   } else {
     b.Valid = true
   }
+  b.ensureValid()
+}
+
+func (b *Boxfile) ensureValid() {
+  if b.Valid {
+    for _, node := range b.Nodes() {
+      box := b.Node(node)
+      if box.Valid {
+        box.ensureValid()
+        b.Parsed[node] = box.Parsed
+      }
+    }
+  }
 }
 
