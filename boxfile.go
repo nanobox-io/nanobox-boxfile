@@ -4,6 +4,7 @@ package boxfile
 import (
   "launchpad.net/goyaml"
   "io/ioutil"
+  "regexp"
   "strconv"
 )
 
@@ -129,6 +130,31 @@ func (self *Boxfile) MergeProc(box Boxfile) {
     self.Parsed[key] = map[string]interface{}{"exec":val}
   }
 }
+
+// Adds any missing storage nodes that are implied in the web => network_dirs but not 
+// explicitly placed inside the root as a nfs node
+func (self *Boxfile) AddStorageNode() {
+  for _, node := range self.Nodes() {
+    name := regexp.MustCompile(`\d+`).ReplaceAllString(node, "")
+    if (name == "web" || name == "worker") && self.Node(node).Value("network_dirs") != nil {
+      found := false
+      for _, storage := range self.Node(node).Node("network_dirs").Nodes() {
+        found = true
+        if !self.Node(storage).Valid {
+          self.Parsed[storage] = map[string]interface{}{"found": true}
+        }
+      }
+
+      // if i dont find anything but they did have a network_dirs.. just try adding a new one
+      if !found {
+        if !self.Node("nfs1").Valid {
+          self.Parsed["nfs1"] = map[string]interface{}{"found": true}
+        }
+      }
+    }
+  }  
+}
+
 
 // fillRaw is used when a boxfile is create from an existing boxfile and we want to 
 // see what the raw would look like
