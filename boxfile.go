@@ -102,10 +102,35 @@ func (b Boxfile) BoolValue(name string) bool {
   }
 }
 
-// list nodes
-func (b Boxfile) Nodes() (rtn []string) {
-  for key, _ := range b.Parsed {
-    rtn = append(rtn, key)
+// list nodes 
+// allow the user to specify which types of nodes your interested in
+func (b Boxfile) Nodes(types ...string) (rtn []string) {
+  if len(types) == 0 {
+    for key, _ := range b.Parsed {
+      rtn = append(rtn, key)
+    }
+    return
+  }
+
+  for _, t := range types {
+    for key, _ := range b.Parsed {
+      name := regexp.MustCompile(`\d+`).ReplaceAllString(key, "")
+      switch t {
+      case "service":
+        if key != "nanobox" &&
+          key != "global" &&
+          key != "build" &&
+          name != "web" &&
+          name != "worker" {
+
+          rtn = append(rtn, key)
+        }
+      case "code":
+        if name == "web" || name == "worker" {
+          rtn = append(rtn, key)
+        }
+      }
+    }
   }
   return
 }
