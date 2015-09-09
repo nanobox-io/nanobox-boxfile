@@ -74,6 +74,21 @@ func (b Boxfile) StringValue(name string) string {
   }
 }
 
+func (b Boxfile) VersionValue(name string) string {
+  switch b.Parsed[name].(type) {
+  default:
+    return "1.0"
+  case string:
+    return b.Parsed[name].(string)
+  case int:
+    return strconv.Itoa(b.Parsed[name].(int)) + ".0"
+  case float32:
+    return strconv.FormatFloat(b.Parsed[name].(float64), 'f', 1, 32)
+  case float64:
+    return strconv.FormatFloat(b.Parsed[name].(float64), 'f', 1, 64)
+  }
+}
+
 func (b Boxfile) IntValue(name string) int {
   switch b.Parsed[name].(type) {
   default:
