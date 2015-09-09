@@ -68,7 +68,7 @@ func (b Boxfile) StringValue(name string) string {
   case int:
     return strconv.Itoa(b.Parsed[name].(int))
   case float32:
-    return strconv.FormatFloat(b.Parsed[name].(float32), 'f', -1, 32)
+    return strconv.FormatFloat(b.Parsed[name].(float64), 'f', -1, 32)
   case float64:
     return strconv.FormatFloat(b.Parsed[name].(float64), 'f', -1, 64)
   }
