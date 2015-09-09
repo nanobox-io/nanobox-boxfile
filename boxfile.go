@@ -77,7 +77,7 @@ func (b Boxfile) StringValue(name string) string {
 func (b Boxfile) VersionValue(name string) string {
   switch b.Parsed[name].(type) {
   default:
-    return "1.0"
+    return ""
   case string:
     return b.Parsed[name].(string)
   case int:
