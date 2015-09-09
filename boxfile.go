@@ -1,6 +1,5 @@
 package boxfile
 
-
 import (
   "launchpad.net/goyaml"
   "io/ioutil"
@@ -68,6 +67,10 @@ func (b Boxfile) StringValue(name string) string {
     return strconv.FormatBool(b.Parsed[name].(bool))
   case int:
     return strconv.Itoa(b.Parsed[name].(int))
+  case float32:
+    return strconv.FormatFloat(b.Parsed[name].(float32), 'f', -1, 32)
+  case float64:
+    return strconv.FormatFloat(b.Parsed[name].(float64), 'f', -1, 64)
   }
 }
 
@@ -122,12 +125,14 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
           key != "env" &&
           key != "build" &&
           name != "web" &&
-          name != "worker" {
+          name != "worker" &&
+          name != "tcp" &&
+          name != "udp" {
 
           rtn = append(rtn, key)
         }
       case "code":
-        if name == "web" || name == "worker" {
+        if name == "web" || name == "worker" || name == "tcp" || name == "udp" {
           rtn = append(rtn, key)
         }
       }
