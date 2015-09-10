@@ -134,6 +134,13 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
     for key, _ := range b.Parsed {
       name := regexp.MustCompile(`\d+`).ReplaceAllString(key, "")
       switch t {
+      case "container":
+        if key != "nanobox" &&
+          key != "console" &&
+          key != "env" &&
+          key != "build" {
+          rtn = append(rtn, key)
+        }
       case "service":
         if key != "nanobox" &&
           key != "console" &&
