@@ -150,6 +150,10 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
         if name == "web" || name == "worker" || name == "tcp" || name == "udp" {
           rtn = append(rtn, key)
         }
+      default: 
+        if name == t {
+          rtn = append(rtn, key)
+        }
       }
     }
   }
