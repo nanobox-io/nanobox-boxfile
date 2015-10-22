@@ -36,3 +36,4 @@ func TestParsedSubParts(t *testing.T) {
     t.Error("the parsed data in a invalid node should be an empty map")
   }
 }
+
