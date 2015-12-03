@@ -29,6 +29,10 @@ func New(raw []byte) Boxfile {
   return box
 }
 
+func (self Boxfile) SaveToPath(path string) error {
+  return ioutil.WriteFile(path, self.raw, 0755)
+}
+
 // Node returns just a specific node from the boxfile
 // if the object is a sub hash it returns a boxfile object 
 // this allows Node to be chained if you know the data
