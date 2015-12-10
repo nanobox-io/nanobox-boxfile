@@ -142,6 +142,7 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
       case "container":
         if key != "nanobox" &&
           key != "console" &&
+          key != "dev" &&
           key != "env" &&
           key != "build" {
           rtn = append(rtn, key)
@@ -149,6 +150,7 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
       case "service":
         if key != "nanobox" &&
           key != "console" &&
+          key != "dev" &&
           key != "env" &&
           key != "build" &&
           name != "web" &&
