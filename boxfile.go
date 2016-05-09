@@ -4,6 +4,7 @@ import (
   "launchpad.net/goyaml"
   "io/ioutil"
   "regexp"
+  "strings"
   "strconv"
 )
 
@@ -40,7 +41,7 @@ func (self Boxfile) Node(name string) (box Boxfile) {
   switch self.Parsed[name].(type) {
   case map[string]interface{}:
     box.Parsed = self.Parsed[name].(map[string]interface{})
-    box.fillRaw()
+    box.FillRaw()
     box.Valid = true
   case map[interface{}]interface{}:
     box.Parsed = make(map[string]interface{})
@@ -60,6 +61,24 @@ func (self Boxfile) Node(name string) (box Boxfile) {
 
 func (b Boxfile) Value(name string) interface{} {
   return b.Parsed[name]
+}
+
+func (b Boxfile) StringSliceValue(name string) []string {
+  switch b.Parsed[name].(type) {
+  default:
+    return []string{}
+  case string:
+    return strings.Split(b.Parsed[name].(string), ",")
+  case []interface{}:
+    rtn := []string{}
+    for _, key := range b.Parsed[name].([]interface{}) {
+      str, ok := key.(string)
+      if ok {
+        rtn = append(rtn, str)
+      }
+    }
+    return rtn
+  }  
 }
 
 func (b Boxfile) StringValue(name string) string {
@@ -137,30 +156,24 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
 
   for _, t := range types {
     for key, _ := range b.Parsed {
-      name := regexp.MustCompile(`\d+`).ReplaceAllString(key, "")
+      nodeType := regexp.MustCompile(`\..+`).ReplaceAllString(key, "")
       switch t {
       case "container":
-        if key != "nanobox" &&
-          key != "dev" &&
-          key != "env" &&
-          key != "build" {
-          rtn = append(rtn, key)
-        }
-      case "service":
-        if key != "nanobox" &&
-          key != "dev" &&
-          key != "env" &&
-          key != "build" &&
-          name != "web" &&
-          name != "worker" {
+        if nodeType == "web" ||
+          nodeType == "worker" ||
+          nodeType == "data" {
           rtn = append(rtn, key)
         }
       case "code":
-        if name == "web" || name == "worker" {
+        if nodeType == "web" || nodeType == "worker" {
           rtn = append(rtn, key)
         }
-      default: 
-        if name == t {
+      case "web", "worker", "data":
+        if nodeType == t {
+          rtn = append(rtn, key)
+        }
+      default:
+        if key == t {
           rtn = append(rtn, key)
         }
       }
@@ -215,9 +228,13 @@ func (self *Boxfile) AddStorageNode() {
 }
 
 
-// fillRaw is used when a boxfile is create from an existing boxfile and we want to 
+func (self Boxfile) Equal(other Boxfile) bool {
+  return string(self.raw) == string(other.raw)
+}
+
+// FillRaw is used when a boxfile is create from an existing boxfile and we want to 
 // see what the raw would look like
-func (b *Boxfile) fillRaw() {
+func (b *Boxfile) FillRaw() {
   b.raw , _ = goyaml.Marshal(b.Parsed)
 }
 
