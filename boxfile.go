@@ -64,9 +64,12 @@ func (b Boxfile) Value(name string) interface{} {
 }
 
 func (b Boxfile) StringSliceValue(name string) []string {
+  rtn := []string{}
   switch b.Parsed[name].(type) {
   default:
     return []string{}
+  case []string:
+    return b.Parsed[name].([]string)
   case string:
     return strings.Split(b.Parsed[name].(string), ",")
   case interface{}:
@@ -78,18 +81,16 @@ func (b Boxfile) StringSliceValue(name string) []string {
           rtn = append(rtn, str)
         }
       }
-      
     }
   case []interface{}:
-    rtn := []string{}
     for _, key := range b.Parsed[name].([]interface{}) {
       str, ok := key.(string)
       if ok {
         rtn = append(rtn, str)
       }
     }
-    return rtn
   }  
+  return rtn
 }
 
 func (b Boxfile) StringValue(name string) string {
