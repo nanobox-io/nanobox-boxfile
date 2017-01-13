@@ -1,17 +1,17 @@
 package boxfile
 
 import (
-  "launchpad.net/goyaml"
   "io/ioutil"
+  "launchpad.net/goyaml"
   "regexp"
-  "strings"
   "strconv"
+  "strings"
 )
 
 type Boxfile struct {
-  raw []byte
+  raw    []byte
   Parsed map[string]interface{}
-  Valid bool
+  Valid  bool
 }
 
 // NewFromPath creates a new boxfile from a file instead of raw bytes
@@ -23,7 +23,7 @@ func NewFromPath(path string) Boxfile {
 // New returns a boxfile object from raw data
 func New(raw []byte) Boxfile {
   box := Boxfile{
-    raw: raw,
+    raw:    raw,
     Parsed: make(map[string]interface{}),
   }
   box.parse()
@@ -31,14 +31,14 @@ func New(raw []byte) Boxfile {
 }
 
 func (self Boxfile) String() string {
-       return string(self.raw)
+  return string(self.raw)
 }
 func (self Boxfile) SaveToPath(path string) error {
   return ioutil.WriteFile(path, self.raw, 0755)
 }
 
 // Node returns just a specific node from the boxfile
-// if the object is a sub hash it returns a boxfile object 
+// if the object is a sub hash it returns a boxfile object
 // this allows Node to be chained if you know the data
 func (self Boxfile) Node(name string) (box Boxfile) {
   switch self.Parsed[name].(type) {
@@ -47,19 +47,59 @@ func (self Boxfile) Node(name string) (box Boxfile) {
     box.FillRaw()
     box.Valid = true
   case map[interface{}]interface{}:
-    box.Parsed = make(map[string]interface{})
-    for key, val := range self.Parsed[name].(map[interface{}]interface{}) {
-      switch key.(type) {
-      case string:
-        box.Parsed[key.(string)] = val
-      }
-    }
+    box.Parsed = convertMap(self.Parsed[name].(map[interface{}]interface{}))
     box.Valid = true
   default:
     box.Parsed = make(map[string]interface{})
     box.Valid = false
   }
   return
+}
+
+// recursive function that converts map[interface{}]interface
+// to a map[string]interface{}
+// this is required since json can parse something into the first
+// but then cannot put it back into json
+func convertMap(in map[interface{}]interface{}) map[string]interface{} {
+  rtn := make(map[string]interface{})
+  for key, val := range in {
+    // if the value is a map of interface interfaces
+    // make sure to convert them as well    
+    var newValue interface{}
+    switch val.(type) {
+      case []interface{}:
+        newValue = convertArray(val.([]interface{}))
+      case map[interface{}]interface{}:
+        newValue = convertMap(val.(map[interface{}]interface{}))
+      default:
+        newValue = val
+    }
+
+    switch key.(type) {
+    case string:
+      rtn[key.(string)] = newValue
+    }
+  }
+
+  return rtn  
+}
+
+// convert any sub values in an array that may be a map of interface interfaces
+func convertArray(in []interface{}) []interface{} {
+  rtn := []interface{}{}
+  for _, val := range in {
+    var newValue interface{}
+    switch val.(type) {
+      case []interface{}:
+        newValue = convertArray(val.([]interface{}))
+      case map[interface{}]interface{}:
+        newValue = convertMap(val.(map[interface{}]interface{}))
+      default:
+        newValue = val
+    } 
+    rtn = append(rtn, newValue)  
+  }
+  return rtn
 }
 
 func (b Boxfile) Value(name string) interface{} {
@@ -92,7 +132,7 @@ func (b Boxfile) StringSliceValue(name string) []string {
         rtn = append(rtn, str)
       }
     }
-  }  
+  }
   return rtn
 }
 
@@ -150,7 +190,7 @@ func (b Boxfile) BoolValue(name string) bool {
   default:
     return false
   case string:
-    boo, _ :=strconv.ParseBool(b.Parsed[name].(string))
+    boo, _ := strconv.ParseBool(b.Parsed[name].(string))
     return boo
   case bool:
     return b.Parsed[name].(bool)
@@ -159,7 +199,7 @@ func (b Boxfile) BoolValue(name string) bool {
   }
 }
 
-// list nodes 
+// list nodes
 // allow the user to specify which types of nodes your interested in
 func (b Boxfile) Nodes(types ...string) (rtn []string) {
   if len(types) == 0 {
@@ -214,11 +254,11 @@ func (self *Boxfile) Merge(box Boxfile) {
 // MergeProc drops a procfile into the existing boxfile
 func (self *Boxfile) MergeProc(box Boxfile) {
   for key, val := range box.Parsed {
-    self.Parsed[key] = map[string]interface{}{"exec":val}
+    self.Parsed[key] = map[string]interface{}{"exec": val}
   }
 }
 
-// Adds any missing storage nodes that are implied in the web => network_dirs but not 
+// Adds any missing storage nodes that are implied in the web => network_dirs but not
 // explicitly placed inside the root as a nfs node
 func (self *Boxfile) AddStorageNode() {
   for _, node := range self.Nodes() {
@@ -239,18 +279,17 @@ func (self *Boxfile) AddStorageNode() {
         }
       }
     }
-  }  
+  }
 }
-
 
 func (self Boxfile) Equal(other Boxfile) bool {
   return string(self.raw) == string(other.raw)
 }
 
-// FillRaw is used when a boxfile is create from an existing boxfile and we want to 
+// FillRaw is used when a boxfile is create from an existing boxfile and we want to
 // see what the raw would look like
 func (b *Boxfile) FillRaw() {
-  b.raw , _ = goyaml.Marshal(b.Parsed)
+  b.raw, _ = goyaml.Marshal(b.Parsed)
 }
 
 // parse takes raw data and converts it to a map structure
@@ -275,4 +314,3 @@ func (b *Boxfile) ensureValid() {
     }
   }
 }
-
