@@ -13,7 +13,7 @@ import (
 
 // Struct Boxfile contains information about the boxfile
 type Boxfile struct {
-	Raw    []byte                 //
+	Raw    []byte                 // Raw bytes to be parsed into Boxfile.Parsed
 	Parsed map[string]interface{} // Parsed is the parsed boxfile.yml
 	Valid  bool                   // Valid is true if the boxfile.yml is valid
 }
@@ -28,8 +28,10 @@ func New(raw []byte) Boxfile {
 	return box
 }
 
-// Deprecated. Use NewFromFile()
 // NewFromPath creates a new boxfile from a file instead of raw bytes
+//
+// Deprecated: Use NewFromFile instead, which diferentiates between a missing
+// or invalid boxfile
 func NewFromPath(path string) Boxfile {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -39,14 +41,8 @@ func NewFromPath(path string) Boxfile {
 	return New(raw)
 }
 
-func (self Boxfile) String() string {
-	return string(self.Raw)
-}
-func (self Boxfile) SaveToPath(path string) error {
-	return ioutil.WriteFile(path, self.Raw, 0755)
-}
-
-// NewFromFile reads a file and returns a boxfile object
+// NewFromFile reads a file and returns a boxfile object. It differentiates
+// between a missing boxfile.yml(err) or an invalid one(!.Valid)
 func NewFromFile(path string) (*Boxfile, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -54,6 +50,10 @@ func NewFromFile(path string) (*Boxfile, error) {
 	}
 	box := New(raw)
 	return &box, err
+}
+
+func (self Boxfile) SaveToPath(path string) error {
+	return ioutil.WriteFile(path, self.Raw, 0755)
 }
 
 // Node returns just a specific node from the boxfile. If the object is a sub hash,
@@ -85,7 +85,7 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
 
 	for i := range types {
 		for key := range b.Parsed {
-			nodeType := regexp.MustCompile(`\d+`).ReplaceAllString(key, "")
+			nodeType := regexp.MustCompile(`\..+`).ReplaceAllString(key, "")
 			switch types[i] {
 			case "container":
 				if nodeType == "web" ||
@@ -111,52 +111,12 @@ func (b Boxfile) Nodes(types ...string) (rtn []string) {
 	return
 }
 
-// recursive function that converts map[interface{}]interface
-// to a map[string]interface{}
-// this is required since json can parse something into the first
-// but then cannot put it back into json
-func convertMap(in map[interface{}]interface{}) map[string]interface{} {
-	rtn := make(map[string]interface{})
-	for key, val := range in {
-		// if the value is a map of interface interfaces
-		// make sure to convert them as well
-		var newValue interface{}
-		switch val.(type) {
-		case []interface{}:
-			newValue = convertArray(val.([]interface{}))
-		case map[interface{}]interface{}:
-			newValue = convertMap(val.(map[interface{}]interface{}))
-		default:
-			newValue = val
-		}
-
-		switch key.(type) {
-		case string:
-			rtn[key.(string)] = newValue
-		}
-	}
-
-	return rtn
+// String returns the raw boxfile as a string
+func (self Boxfile) String() string {
+	return string(self.Raw)
 }
 
-// convert any sub values in an array that may be a map of interface interfaces
-func convertArray(in []interface{}) []interface{} {
-	rtn := []interface{}{}
-	for _, val := range in {
-		var newValue interface{}
-		switch val.(type) {
-		case []interface{}:
-			newValue = convertArray(val.([]interface{}))
-		case map[interface{}]interface{}:
-			newValue = convertMap(val.(map[interface{}]interface{}))
-		default:
-			newValue = val
-		}
-		rtn = append(rtn, newValue)
-	}
-	return rtn
-}
-
+// Value returns the value of a boxfile node
 func (b Boxfile) Value(name string) interface{} {
 	return b.Parsed[name]
 }
@@ -338,4 +298,50 @@ func (b *Boxfile) ensureValid() {
 			}
 		}
 	}
+}
+
+// recursive function that converts map[interface{}]interface
+// to a map[string]interface{}
+// this is required since json can parse something into the first
+// but then cannot put it back into json
+func convertMap(in map[interface{}]interface{}) map[string]interface{} {
+	rtn := make(map[string]interface{})
+	for key, val := range in {
+		// if the value is a map of interface interfaces
+		// make sure to convert them as well
+		var newValue interface{}
+		switch val.(type) {
+		case []interface{}:
+			newValue = convertArray(val.([]interface{}))
+		case map[interface{}]interface{}:
+			newValue = convertMap(val.(map[interface{}]interface{}))
+		default:
+			newValue = val
+		}
+
+		switch key.(type) {
+		case string:
+			rtn[key.(string)] = newValue
+		}
+	}
+
+	return rtn
+}
+
+// convert any sub values in an array that may be a map of interface interfaces
+func convertArray(in []interface{}) []interface{} {
+	rtn := []interface{}{}
+	for _, val := range in {
+		var newValue interface{}
+		switch val.(type) {
+		case []interface{}:
+			newValue = convertArray(val.([]interface{}))
+		case map[interface{}]interface{}:
+			newValue = convertMap(val.(map[interface{}]interface{}))
+		default:
+			newValue = val
+		}
+		rtn = append(rtn, newValue)
+	}
+	return rtn
 }

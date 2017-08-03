@@ -105,6 +105,40 @@ func TestNewFromFile(t *testing.T) {
 	}
 }
 
+// TestSaveToPath tests saving the created boxfile to a file location
+func TestSaveToPath(t *testing.T) {
+	// remove /tmp/newboxfile.yml
+	err := os.RemoveAll("/tmp/newboxfile.yml")
+	if err != nil {
+		t.Errorf("Failed to remove /tmp/newboxfile.yml - %s", err.Error())
+		t.FailNow()
+	}
+
+	box := boxfile.New([]byte(testBoxfile))
+	if err = box.SaveToPath("/tmp/newboxfile.yml"); err != nil {
+		t.Errorf("Failed to save to path - %s", err.Error())
+		t.FailNow()
+	}
+
+	newbox, err := boxfile.NewFromFile("/tmp/newboxfile.yml")
+	if newbox != nil || err == nil {
+		t.Error("Should have failed to find newboxfile.yml")
+		t.FailNow()
+	}
+
+	if string(newbox.Raw) != string(box.Raw) {
+		t.Errorf("Failed to match written and read boxfiles")
+		t.FailNow()
+	}
+
+	// remove /tmp/newboxfile.yml
+	err = os.RemoveAll("/tmp/newboxfile.yml")
+	if err != nil {
+		t.Errorf("Failed to remove /tmp/newboxfile.yml - %s", err.Error())
+		t.FailNow()
+	}
+}
+
 // TestNode ensures we can get boxfile sub-hashes
 func TestNode(t *testing.T) {
 	box := boxfile.New([]byte(testBoxfile2))
@@ -121,22 +155,65 @@ func TestNode(t *testing.T) {
 		t.FailNow()
 	}
 
-	// start := box.Node("web.api").Node("start")
-	// t.Log(start.Parsed)
-
 	start := box.Node("web.db").Node("start")
 	t.Log(start.Parsed)
+
+	// start = box.Node("web.api").Node("start")
+	// t.Log(start.Parsed)
 }
 
 func TestNodes(t *testing.T) {
 	box := boxfile.New([]byte(testBoxfile2))
 	nodes := box.Nodes()
-	t.Log(nodes)
-
+	// todo: Nodes() doesn't keep order based on appearance in boxfile
+	// if nodes[0] != "run.config"{
+	if !contains(nodes, "run.config") {
+		t.Errorf("Failed to fetch all nodes - %s", nodes)
+		t.FailNow()
+	}
 	nodes = box.Nodes("web")
-	t.Log(nodes)
+	if contains(nodes, "data.db2") {
+		t.Errorf("Failed to fetch web nodes - %s", nodes)
+		t.FailNow()
+	}
+	nodes = box.Nodes("code")
+	if contains(nodes, "data.db2") {
+		t.Errorf("Failed to fetch code nodes - %s", nodes)
+		t.FailNow()
+	}
 	nodes = box.Nodes("container")
-	t.Log(nodes)
+	if contains(nodes, "run.config") {
+		t.Errorf("Failed to fetch container nodes - %s", nodes)
+		t.FailNow()
+	}
+	nodes = box.Nodes("data")
+	if contains(nodes, "web.api") {
+		t.Errorf("Failed to fetch data nodes - %s", nodes)
+		t.FailNow()
+	}
+	nodes = box.Nodes("data.db2")
+	if contains(nodes, "web.api") {
+		t.Errorf("Failed to fetch data.db2 node - %s", nodes)
+		t.FailNow()
+	}
+}
+
+func TestString(t *testing.T) {
+	box := boxfile.New([]byte(testBoxfile))
+	if box.String() != testBoxfile {
+		t.Errorf("boxfile.String() failed to match - %s", box.String())
+		t.FailNow()
+	}
+}
+
+func TestValue(t *testing.T) {
+	box := boxfile.New([]byte(testBoxfile))
+	val := box.Value("data.db")
+	t.Log(val)
+	if val.(map[string]interface{})["image"] != "postgresql:9.6" {
+		t.Errorf("Failed to match values - %s", val.(map[string]interface{})["image"])
+		t.FailNow()
+	}
 }
 
 // func TestDeepNesting(t *testing.T) {
@@ -219,6 +296,16 @@ func TestNodes(t *testing.T) {
 //   }
 // }
 
+func contains(array []string, find string) bool {
+	for i := range array {
+		if array[i] == find {
+			return true
+		}
+	}
+
+	return false
+}
+
 var (
 	testBoxfile string = `
 run.config:
@@ -231,6 +318,9 @@ data.db:
 	testBoxfile2 string = `
 run.config:
   engine: none
+
+data.db2:
+  image: redis
 
 web.api:
   start:
