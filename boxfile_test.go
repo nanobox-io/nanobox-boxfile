@@ -121,8 +121,8 @@ func TestSaveToPath(t *testing.T) {
 	}
 
 	newbox, err := boxfile.NewFromFile("/tmp/newboxfile.yml")
-	if newbox != nil || err == nil {
-		t.Error("Should have failed to find newboxfile.yml")
+	if newbox == nil || err != nil {
+		t.Error("Failed to find newboxfile.yml")
 		t.FailNow()
 	}
 
@@ -162,6 +162,7 @@ func TestNode(t *testing.T) {
 	// t.Log(start.Parsed)
 }
 
+// TestNodes tests that the correct nodes are returned from the nodes function
 func TestNodes(t *testing.T) {
 	box := boxfile.New([]byte(testBoxfile2))
 	nodes := box.Nodes()
@@ -198,6 +199,7 @@ func TestNodes(t *testing.T) {
 	}
 }
 
+// TestString ensures that the string returned matches the original string
 func TestString(t *testing.T) {
 	box := boxfile.New([]byte(testBoxfile))
 	if box.String() != testBoxfile {
@@ -206,6 +208,7 @@ func TestString(t *testing.T) {
 	}
 }
 
+// TestValue tests that the value of a boxfile node matches
 func TestValue(t *testing.T) {
 	box := boxfile.New([]byte(testBoxfile))
 	val := box.Value("data.db")
