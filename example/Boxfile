@@ -3,6 +3,7 @@ build:
   version: 5.4
   stability: production
   exec:
+    - 'gem install'
     - "composer install --no-interaction --prefer-source"
   lib_dir: vendor
   reuse_libs: true
